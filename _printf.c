@@ -1,47 +1,99 @@
 #include "main.h"
+/**
+ * print_format - format controller
+ * @format: the base string
+ * @valist : hold the argument passed
+ * Return: total size of the argument with the total size of the base string
+ */
+int print_format(const char *format, va_list valist)
+{
+	unsigned int count = 0;
+	int result;
+	int i = 0;
+
+	for (i = 0; format[i]; i++)
+	{
+		if (format[i] == '%')
+		{
+			result = formatchecker(format, valist, &i);
+			if (result == -1)
+			{
+				return (-1);
+			}
+		count += result;
+		continue;
+		}
+	print_out(format[i]);
+	count++;
+	}
+	return (count);
+}
 
 /**
- * _printf - produces output according to a format
- * @format: format string containing the characters and the specifiers
- * Description: this function will call the get_print() function that will
- * determine which printing function to call depending on the conversion
- * specifiers contained into fmt
- * Return: length of the formatted output string
+ * formatchecker - checks the format and print the character
+ * @str: the base string
+ * @valist: number of arguments passed
+ * @j: address of %
+ * Return: total number of printed charcter inside the argument
+ */
+int formatchecker(const char *str, va_list valist, int *j)
+{
+	int i;
+	int p;
+	int formats;
+
+	Data checker[] = {{'c', print_char},
+			  {'s', print_string},
+			  {'d', print_int},
+			  {'i', print_int},
+			  {'b', print_binary},
+			  {'u', print_unsigned},
+			  {'o', print_octal},
+			  {'x', print_hex},
+			  {'X', print_hex_big},
+			  {'S', print_bigS},
+			  {'p', print_address},
+			  {'R', print_rot13}};
+	*j = *j + 1;
+	if (str[*j] == '\0')
+	{
+		return (-1);
+	}
+	if (str[*j] == '%')
+	{
+		print_out('%');
+		return (1);
+	}
+	formats = sizeof(checker) / sizeof(checker[0]);
+	for (i = 0; i < formats; i++)
+	{
+		if (str[*j] == checker[i].l)
+		{
+			p = checker[i].ptr(valist);
+			return (p);
+		}
+	}
+	print_out('%'), print_out(str[*j]);
+	return (2);
+}
+
+/**
+ * _printf - prints anything
+ * @format: list of argument type passed
+ * Return: number of character printed
  */
 int _printf(const char *format, ...)
 {
-	int (*pfunc)(va_list, flags_t *);
-	const char *p;
-	va_list arguments;
-	flags_t flags = {0, 0, 0};
+	va_list ag;
+	int f;
 
-	register int count = 0;
-
-	va_start(arguments, format);
-	if (!format || (format[0] == '%' && !format[1]))
-		return (-1);
-	if (format[0] == '%' && format[1] == ' ' && !format[2])
-		return (-1);
-	for (p = format; *p; p++)
+	if (format == NULL)
 	{
-		if (*p == '%')
-		{
-			p++;
-			if (*p == '%')
-			{
-				count += _putchar('%');
-				continue;
-			}
-			while (get_flag(*p, &flags))
-				p++;
-			pfunc = get_print(*p);
-			count += (pfunc)
-				? pfunc(arguments, &flags)
-				: _printf("%%%c", *p);
-		} else
-			count += _putchar(*p);
+		return (-1);
 	}
-	_putchar(-1);
-	va_end(arguments);
-	return (count);
+	va_start(ag, format);
+	f = print_format(format, ag);
+	print_out(-1);
+	va_end(ag);
+	return (f);
 }
